@@ -3628,6 +3628,21 @@ html[data-layout="desktop"] #goals-list > .goal-acc:first-child, html[data-layou
   </div>
 </div>
 
+<!-- ============ MODAL PINDAH REKENING TITIPAN ============ -->
+<div class="modal-overlay" id="tt-pindah-modal-overlay">
+  <div class="modal-box" style="max-width:340px; text-align:left;">
+    <h3 style="margin:0 0 4px; font-family:var(--font-disp); font-size:16px;">Pindah Rekening Titipan</h3>
+    <div class="meta-sub" style="margin-bottom:12px;" id="tt-pindah-info"></div>
+    <div class="field"><label>Sekarang disimpan di rekening</label><select id="tt-pindah-ke"></select></div>
+    <div style="font-size:11.5px; color:var(--text-2); margin:0 0 12px; line-height:1.5;">Ini hanya mengubah posisi dana titipan (untuk perhitungan dana bebas dan dana darurat). Saldo rekening tidak berubah, jadi pakai ini kalau transfernya sudah kamu catat terpisah.</div>
+    <div id="tt-pindah-err" style="font-size:11.5px; color:var(--danger); min-height:16px; margin-bottom:6px;"></div>
+    <div class="modal-actions">
+      <button class="cancel" id="tt-pindah-cancel">Batal</button>
+      <button class="confirm" id="tt-pindah-simpan" style="background:var(--primary);">Simpan</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL JUAL SISA ASET RUSAK ============ -->
 <div class="modal-overlay" id="jual-rusak-modal-overlay">
   <div class="modal-box" style="max-width:340px; text-align:left;">
@@ -3960,6 +3975,7 @@ function isHybridTabunganInvestasi(acc){
    ini -- nomor versi yang ditampilkan di halaman Pengaturan otomatis ikut ke-update,
    nggak perlu ubah HTML manual. */
 var CHANGELOG = [
+  { versi:"1.11.2", catatan:'Dana titipan: "Pindahkan titipan" di form Transfer sekarang juga bisa dipakai untuk titipan uang orang lain (yang dulu tidak muncul di pilihan), jadi posisi titipan ikut berpindah ke rekening tujuan tanpa saldo dobel. Ada peringatan di form Transfer kalau rekening asal punya dana titipan aktif, dan tombol "Pindah rekening" di tiap kartu titipan untuk membetulkan posisi titipan yang transfernya sudah telanjur dicatat biasa.' },
   { versi:"1.11.1", catatan:'Inventaris: ada "Kantong Rusak / Hilang" khusus di halaman Inventaris Aset. Aset yang dikeluarkan dengan alasan Rusak / Hilang masuk ke kantong ini, lengkap dengan tanggal, keterangan, dan total kerugian (nilai wajar saat dikeluarkan). Aset lama yang sudah dikeluarkan karena rusak ikut terhitung otomatis. Ada tombol "Jual sisa" untuk menjual aset rusak (rongsok/suku cadang): hasilnya jadi pemasukan (atau Piutang) dan mengurangi total kerugian.' },
   { versi:"1.11.0", catatan:"Fitur baru \"Dana Patungan\": kantong uang bersama untuk dua akun berbeda. Satu akun membuat kantong lalu membagikan kode undangan, akun lainnya bergabung dengan kode itu. Setoran dan penarikan masuk ke satu saldo bersama yang tampil realtime di kedua akun, dan mengurangi/menambah rekening pribadi masing-masing. Di Beranda ada tombol Pribadi / Patungan untuk berganti antara saldo pribadi dan saldo dana patungan. Perlu menambahkan Rules Firestore untuk koleksi \"patungan\" (tersedia di halaman Dana Patungan)." },
   { versi:"1.10.1", catatan:'Maskot rubah di Kesehatan Finansial diganti dengan desain baru yang lebih imut dan rapi (rubah duduk memegang koin, syal tosca). Ekspresinya berubah mengikuti skor: Sangat Sehat, Sehat, Cukup, Perlu Perhatian, Waspada, dan tidur saat belum ada data.' },
@@ -4157,7 +4173,7 @@ function rekeningUsedIn(acc){
     DATA.belanja.some(function(b){ return b.metode===acc; }) ||
     DATA.piutang.some(function(p){ return p.metode===acc || cicilanOf(p).some(function(c){ return c.metode===acc; }); }) ||
     DATA.hutang.some(function(h){ return h.metode===acc || h.metodeBayar===acc || cicilanOf(h).some(function(c){ return c.metode===acc; }); }) ||
-    DATA.titipan.some(function(t){ return t.metode===acc || t.metodeBayar===acc; }) ||
+    DATA.titipan.some(function(t){ return t.metode===acc || t.akunMasuk===acc || t.metodeBayar===acc; }) ||
     DATA.invbeli.some(function(s){ return s.metode===acc || s.platform===acc; }) ||
     DATA.invjual.some(function(s){ return s.metode===acc || s.platform===acc; }) ||
     DATA.tagihan.some(function(t){ return t.metode===acc || cicilanOf(t).some(function(c){ return c.metode===acc; }); }) ||
@@ -7256,7 +7272,7 @@ function setTtMode(prefix, mode){
     if(prefix==='tf'){
       hint.textContent = mode==='baru' ? 'Uang yang ditransfer ke rekening tujuan ditandai sebagai dana titipan (milik orang lain / untuk diserahkan), tampil di kartu Dana Titipan. Saldo tidak dobel, cuma disisihkan.'
         : mode==='pindah' ? 'Pilih dana titipan yang ikut pindah ke rekening tujuan (cth: tarik tunai dari bank ke Cash). Jumlah transfer harus minimal sebesar titipannya.'
-        : 'Transfer biasa antar rekening milikmu.';
+        : tfTitipanNotice();
     } else {
       hint.textContent = mode==='baru' ? 'Uang masuk ke saldo rekening, tapi tidak dihitung sebagai pemasukanmu. Tercatat di menu Dana Titipan.'
         : 'Pemasukan biasa dihitung sebagai penghasilanmu di laporan.';
@@ -7264,8 +7280,19 @@ function setTtMode(prefix, mode){
   }
   if(prefix==='tf' && mode==='pindah') refreshTfTitipanPilihan();
 }
+/* Pindah LOKASI titipan ke rekening lain. Titipan yang masuk sebagai uang orang lain (bukan tanpaSaldo) sudah menambah saldo
+   di rekening awal; rekening awal itu disimpan di akunMasuk supaya saldo tidak ikut bergeser (saldo yang bergerak cuma lewat transfer). */
+function pindahLokasiTitipan(t, ke){
+  if(!t.tanpaSaldo && !t.akunMasuk) t.akunMasuk = t.metode;
+  t.metode = ke;
+}
+function tfTitipanNotice(){
+  var dari = (document.getElementById('tf-dari')||{}).value, n = dari ? titipanDiRekening(dari) : [];
+  var base = 'Transfer biasa antar rekening milikmu.';
+  return n.length ? base+' ⚠ Di rekening ini ada '+n.length+' dana titipan aktif. Kalau uang titipannya ikut dipindah, pilih "Pindahkan titipan" supaya posisinya ikut berubah.' : base;
+}
 function titipanDiRekening(acc){
-  return DATA.titipan.filter(function(t){ return t.tanpaSaldo && t.status==='Aktif' && t.metode===acc; });
+  return DATA.titipan.filter(function(t){ return t.status==='Aktif' && t.metode===acc; });
 }
 function refreshTfTitipanPilihan(){
   var sel = document.getElementById('tf-tt-pilih');
@@ -7282,6 +7309,36 @@ function refreshTfTitipanPilihan(){
   var tfJml = document.getElementById('tf-jumlah');
   if(tfJml && !tfJml.value) tfJml.value = formatMoneyValue(list[0].jumlah);
 }
+/* ===== Pindah rekening titipan (koreksi posisi, tanpa mengubah saldo) ===== */
+var TT_PINDAH_IDX = null;
+function bukaPindahTitipan(i){
+  var t = DATA.titipan[i]; if(!t || t.status!=='Aktif') return;
+  TT_PINDAH_IDX = i;
+  document.getElementById('tt-pindah-info').textContent = (t.nama||'Titipan')+' • '+fmt(t.jumlah)+' • sekarang di '+accountOptionLabel(t.metode);
+  fillSelectAccounts('tt-pindah-ke', ACCOUNTS);
+  document.getElementById('tt-pindah-ke').value = t.metode;
+  document.getElementById('tt-pindah-err').textContent = '';
+  document.getElementById('tt-pindah-modal-overlay').classList.add('show');
+}
+function tutupPindahTitipan(){
+  document.getElementById('tt-pindah-modal-overlay').classList.remove('show');
+  TT_PINDAH_IDX = null;
+}
+function simpanPindahTitipan(){
+  var t = DATA.titipan[TT_PINDAH_IDX];
+  if(!t){ tutupPindahTitipan(); return; }
+  var ke = document.getElementById('tt-pindah-ke').value;
+  if(!ke){ document.getElementById('tt-pindah-err').textContent = 'Pilih rekening dulu'; return; }
+  if(ke===t.metode){ document.getElementById('tt-pindah-err').textContent = 'Titipan sudah di rekening ini'; return; }
+  pindahLokasiTitipan(t, ke);
+  saveData(); tutupPindahTitipan();
+  renderTitipanList(); try{ renderDashboard && renderDashboard(); }catch(e){}
+  toast('Titipan "'+(t.nama||'-')+'" sekarang di '+accountOptionLabel(ke));
+}
+document.addEventListener('click', function(e){
+  var b = e.target.closest ? e.target.closest('[data-tt-pindah]') : null;
+  if(b){ bukaPindahTitipan(parseInt(b.getAttribute('data-tt-pindah'),10)); }
+});
 function refreshTtUi(){
   var editing = editState.type;
   var tfw = document.getElementById('tf-tt-wrap'), pmw = document.getElementById('pm-tt-wrap');
@@ -7474,7 +7531,7 @@ function submitTransfer(){
     if(!ttBaruNama){ toast('Isi dulu titipan ini untuk siapa'); return; }
   } else if(modeTt==='pindah'){
     var idPilih = document.getElementById('tf-tt-pilih').value;
-    ttPindahItem = DATA.titipan.filter(function(t){ return t.id===idPilih && t.tanpaSaldo && t.status==='Aktif'; })[0] || null;
+    ttPindahItem = DATA.titipan.filter(function(t){ return t.id===idPilih && t.status==='Aktif'; })[0] || null;
     if(!ttPindahItem){ toast('Pilih dana titipan yang mau dipindahkan'); return; }
     if(jumlah < ttPindahItem.jumlah){ toast('Jumlah transfer minimal '+fmt(ttPindahItem.jumlah)+' (sebesar titipannya)'); return; }
   }
@@ -7488,14 +7545,14 @@ function submitTransfer(){
   }
   if(keepPindah){
     var ttPin = DATA.titipan.filter(function(t){ return t.id===keepPindah.id; })[0];
-    if(ttPin){ ttPin.metode = ke; record.titipanPindah = {id:keepPindah.id, dari:dari}; }
+    if(ttPin){ pindahLokasiTitipan(ttPin, ke); record.titipanPindah = {id:keepPindah.id, dari:dari}; }
   }
   if(modeTt==='baru'){
     DATA.titipan.push({id:genId('tt'), tanggal:record.tanggal, metode:ke, jumlah:jumlah, nama:ttBaruNama, untuk:'Dari transfer '+dari,
       status:'Aktif', metodeBayar:'', jatuhTempo:'', ket:record.ket||'', tanpaSaldo:true, linkId:record.id});
   } else if(modeTt==='pindah' && ttPindahItem){
     record.titipanPindah = {id:ttPindahItem.id, dari:dari};
-    ttPindahItem.metode = ke;
+    pindahLokasiTitipan(ttPindahItem, ke);
   }
   if(biaya>0){
     var feeRec = {tanggal:record.tanggal, metode:dari, untuk:'Transfer', jenis:'Biaya Admin Transfer',
@@ -7741,6 +7798,7 @@ function submitTitipan(){
     if(oldTt){
       if(oldTt.id) record.id = oldTt.id; if(oldTt.tanpaSaldo) record.tanpaSaldo = true; if(oldTt.linkId) record.linkId = oldTt.linkId;
       if(oldTt.pid) record.pid = oldTt.pid;
+      if(oldTt.akunMasuk) record.akunMasuk = oldTt.akunMasuk;
       if(oldTt.tanggalKembali) record.tanggalKembali = oldTt.tanggalKembali;
       removeTitipanExpense(oldTt);
     }
@@ -8203,7 +8261,7 @@ function saldoAkun(acc, upToDate){
   });
   DATA.titipan.forEach(function(t){
     if(lim && t.tanggal>lim) return;
-    if(t.metode===acc && !t.tanpaSaldo) v += t.jumlah; /* tanpaSaldo = uang sendiri hasil transfer, sudah ada di saldo */
+    if((t.akunMasuk||t.metode)===acc && !t.tanpaSaldo) v += t.jumlah; /* tanpaSaldo = uang sendiri hasil transfer, sudah ada di saldo */
     if(t.status==='Dikembalikan' && !t.catatPg && !(lim && t.tanggalKembali && t.tanggalKembali>lim)){
       var bayarAccTt = t.metodeBayar || t.metode;
       if(bayarAccTt===acc) v -= t.jumlah;
@@ -10458,7 +10516,7 @@ function buildAccountTransactions(acc){
     if(x.status==='Lunas' && (x.metodeBayar||x.metode)===acc && sisaMh>0) list.push({tanggal:x.tanggal, jumlah:sisaMh, tipe:'Bayar Hutang', label:(x.untuk||'-'), sign:-1, type:'hutang', index:i, ket:x.ket||''});
   });
   DATA.titipan.forEach(function(x,i){
-    if(x.metode===acc && !x.tanpaSaldo) list.push({tanggal:x.tanggal, jumlah:x.jumlah, tipe:'Titipan', label:(x.nama||'-'), sign:1, type:'titipan', index:i, ket:x.ket||''});
+    if((x.akunMasuk||x.metode)===acc && !x.tanpaSaldo) list.push({tanggal:x.tanggal, jumlah:x.jumlah, tipe:'Titipan', label:(x.nama||'-'), sign:1, type:'titipan', index:i, ket:x.ket||''});
     if(x.status==='Dikembalikan' && !x.catatPg && (x.metodeBayar||x.metode)===acc) list.push({tanggal:x.tanggal, jumlah:x.jumlah, tipe:'Kembalikan Titipan', label:(x.nama||'-'), sign:-1, type:'titipan', index:i, ket:x.ket||''});
   });
   DATA.invbeli.forEach(function(x,i){
@@ -11431,7 +11489,7 @@ function renderTitipanList(){
     html += loanCard({icon:ICONS.cash, title:t.nama||'-', amount:t.jumlah, status:t.status,
       chips:(t.untuk ? '<span class="badge" style="background:rgba(255,255,255,.06); color:var(--text-2);">'+escapeHtml(t.untuk)+'</span>' : ''),
       line:(t.tanggal ? fmtTglIndo(t.tanggal)+' • ' : '')+lineRek, ket:t.ket, info:lineKembali, due:due,
-      actions:txnActions('titipan',i)});
+      actions:(t.status==='Aktif' ? '<div style="padding:0 0 6px;"><span data-tt-pindah="'+i+'" style="font-size:11.5px; font-weight:700; color:var(--primary); cursor:pointer;">Pindah rekening</span></div>' : '')+txnActions('titipan',i)});
   }
   lfCount('tt', shown, DATA.titipan.length, 'titipan', sum);
   el.innerHTML = shown ? html : '<div class="empty">Tidak ada dana titipan yang cocok.</div>';
@@ -18066,7 +18124,7 @@ function wireEvents(){
     try{ if(window.location.hash==='#widget') history.replaceState(null,'',window.location.pathname+window.location.search); }catch(e){}
     go('dashboard');
   });
-  document.getElementById('tf-dari').addEventListener('change', function(){ if(ttMode.tf==='pindah') refreshTfTitipanPilihan(); });
+  document.getElementById('tf-dari').addEventListener('change', function(){ if(ttMode.tf==='pindah') refreshTfTitipanPilihan(); else setTtMode('tf', ttMode.tf); });
   document.getElementById('cc-simpan').addEventListener('click', simpanCicilan);
   document.getElementById('cc-tutup').addEventListener('click', tutupCicilan);
   document.getElementById('cc-lunasi').addEventListener('click', function(){
@@ -18139,6 +18197,9 @@ function wireEvents(){
     if(ev.target===this) tutupFotoLihat();
   });
   document.getElementById('keluar-aset-simpan').addEventListener('click', simpanKeluarkanAset);
+  document.getElementById('tt-pindah-cancel').addEventListener('click', tutupPindahTitipan);
+  document.getElementById('tt-pindah-simpan').addEventListener('click', simpanPindahTitipan);
+  document.getElementById('tt-pindah-modal-overlay').addEventListener('click', function(ev){ if(ev.target===this) tutupPindahTitipan(); });
   document.getElementById('jual-rusak-cancel').addEventListener('click', tutupJualRusak);
   document.getElementById('jual-rusak-simpan').addEventListener('click', simpanJualRusak);
   document.getElementById('jual-rusak-bayar-diterima').addEventListener('click', function(){ jualRusakSetBayar('diterima'); });
