@@ -3975,6 +3975,7 @@ function isHybridTabunganInvestasi(acc){
    ini -- nomor versi yang ditampilkan di halaman Pengaturan otomatis ikut ke-update,
    nggak perlu ubah HTML manual. */
 var CHANGELOG = [
+  { versi:"1.11.3", catatan:'Pengingat baru di Beranda: kalau saldo sebuah rekening minus, muncul peringatan merah "Saldo Minus" (selalu di urutan teratas, lengkap dengan nominal minusnya) supaya segera dilunasi atau diisi. Ketuk untuk langsung ke menu Transfer.' },
   { versi:"1.11.2", catatan:'Dana titipan: "Pindahkan titipan" di form Transfer sekarang juga bisa dipakai untuk titipan uang orang lain (yang dulu tidak muncul di pilihan), jadi posisi titipan ikut berpindah ke rekening tujuan tanpa saldo dobel. Ada peringatan di form Transfer kalau rekening asal punya dana titipan aktif, dan tombol "Pindah rekening" di tiap kartu titipan untuk membetulkan posisi titipan yang transfernya sudah telanjur dicatat biasa.' },
   { versi:"1.11.1", catatan:'Inventaris: ada "Kantong Rusak / Hilang" khusus di halaman Inventaris Aset. Aset yang dikeluarkan dengan alasan Rusak / Hilang masuk ke kantong ini, lengkap dengan tanggal, keterangan, dan total kerugian (nilai wajar saat dikeluarkan). Aset lama yang sudah dikeluarkan karena rusak ikut terhitung otomatis. Ada tombol "Jual sisa" untuk menjual aset rusak (rongsok/suku cadang): hasilnya jadi pemasukan (atau Piutang) dan mengurangi total kerugian.' },
   { versi:"1.11.0", catatan:"Fitur baru \"Dana Patungan\": kantong uang bersama untuk dua akun berbeda. Satu akun membuat kantong lalu membagikan kode undangan, akun lainnya bergabung dengan kode itu. Setoran dan penarikan masuk ke satu saldo bersama yang tampil realtime di kedua akun, dan mengurangi/menambah rekening pribadi masing-masing. Di Beranda ada tombol Pribadi / Patungan untuk berganti antara saldo pribadi dan saldo dana patungan. Perlu menambahkan Rules Firestore untuk koleksi \"patungan\" (tersedia di halaman Dana Patungan)." },
@@ -10979,6 +10980,18 @@ function renderReminders(){
 
   items = items.concat(cicilanBulanIniItems());
 
+  /* Saldo rekening minus = kamu lagi berhutang (mis. kena overdraft / dana keluar melebihi saldo): ingatkan segera ditutup */
+  var adaMinus = false;
+  try{
+    ACCOUNTS.forEach(function(acc){
+      var sv = saldoAkun(acc);
+      if(sv < -0.5){
+        adaMinus = true;
+        items.push({days:-99999, tanggal:'', tipe:'Saldo Minus', label:accountOptionLabel(acc)+' — segera lunasi / isi saldo', jumlah:Math.abs(sv), badge:'Minus', goto:'transfer'});
+      }
+    });
+  }catch(e){}
+
   renderStokDashboard();
 
   if(items.length===0){ wrap.style.display = 'none'; el.innerHTML = ''; return; }
@@ -10989,7 +11002,7 @@ function renderReminders(){
   var maxShow = isDesk ? 4 : 3;
   var showAll = !!window._remExpanded;
   var urgent = items.filter(function(x){ return x.days<=0 || x.badge; }).length;
-  var html = '<div class="rm-head"><span class="rm-ic">'+ICONS.bell+'</span><span class="rm-ttl">Jatuh tempo</span>'+
+  var html = '<div class="rm-head"><span class="rm-ic">'+ICONS.bell+'</span><span class="rm-ttl">'+(adaMinus ? 'Perlu perhatian' : 'Jatuh tempo')+'</span>'+
     '<span class="rm-pill" style="--c:'+(urgent?'var(--danger)':'var(--warn)')+';">'+items.length+(urgent?' · '+urgent+' mendesak':'')+'</span></div><div class="rm-list">';
   items.forEach(function(x, idx){
     var badgeTxt, c;
