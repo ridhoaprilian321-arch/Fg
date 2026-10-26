@@ -3268,6 +3268,16 @@ html[data-layout="desktop"] #goals-list > .goal-acc:first-child, html[data-layou
       </div>
     </div>
 
+    <div class="card" id="inv-rusak-card" style="display:none;">
+      <h3><span class="dot" style="background:var(--danger);"></span>Kantong Rusak / Hilang</h3>
+      <div class="hint" style="margin-top:-4px;">Kumpulan aset inventaris yang sudah dikeluarkan karena rusak atau hilang. Nilainya dicatat sebagai kerugian aset. Kalau sisanya masih laku dijual (rongsok/suku cadang), pakai tombol Jual: hasilnya jadi pemasukan dan mengurangi kerugian (kalau hasil jual melebihi nilai aset, selisihnya tampil sebagai untung). Selain itu saldo rekening tidak berubah.</div>
+      <div style="display:flex; gap:10px; margin:10px 0 12px;">
+        <div style="flex:1; padding:10px 12px; border-radius:12px; background:rgba(127,127,127,.1);"><div class="meta-sub" id="inv-rusak-total-label">Total Kerugian</div><div class="mono" id="inv-rusak-total" style="font-weight:800; font-size:16px; color:var(--danger);">Rp0</div></div>
+        <div style="flex:1; padding:10px 12px; border-radius:12px; background:rgba(127,127,127,.1);"><div class="meta-sub">Jumlah Aset</div><div class="mono" id="inv-rusak-count" style="font-weight:800; font-size:16px;">0</div></div>
+      </div>
+      <div id="inv-rusak-list"></div>
+    </div>
+
     <div class="card">
       <h3><span class="dot"></span>Daftar Aset</h3>
       <div style="display:flex; gap:8px; margin-bottom:12px;">
@@ -3618,6 +3628,31 @@ html[data-layout="desktop"] #goals-list > .goal-acc:first-child, html[data-layou
   </div>
 </div>
 
+<!-- ============ MODAL JUAL SISA ASET RUSAK ============ -->
+<div class="modal-overlay" id="jual-rusak-modal-overlay">
+  <div class="modal-box" style="max-width:340px; text-align:left;">
+    <h3 style="margin:0 0 4px; font-family:var(--font-disp); font-size:16px;">Jual Aset Rusak</h3>
+    <div class="meta-sub" style="margin-bottom:14px;" id="jual-rusak-info"></div>
+    <div class="field"><label>Hasil Penjualan (Rp)</label><input type="text" class="money-input" id="jual-rusak-harga" placeholder="0" inputmode="numeric"></div>
+    <div class="field"><label>Status Pembayaran</label>
+      <div class="toggle-row">
+        <div class="toggle active" id="jual-rusak-bayar-diterima">Sudah Diterima</div>
+        <div class="toggle" id="jual-rusak-bayar-piutang">Belum (Piutang)</div>
+      </div>
+    </div>
+    <div class="field"><label id="jual-rusak-rekening-label">Rekening Penerimaan</label><select id="jual-rusak-rekening"></select></div>
+    <div id="jual-rusak-piutang-wrap" style="display:none;">
+      <div class="field"><label>Pembeli (opsional)</label><input type="text" id="jual-rusak-piutang-nama" placeholder="cth: tukang loak"></div>
+    </div>
+    <div style="font-size:11.5px; color:var(--text-2); margin:0 0 12px;">Hasil jual tercatat sebagai pemasukan "Jual Aset Rusak" dan mengurangi total kerugian di Kantong Rusak / Hilang.</div>
+    <div id="jual-rusak-err" style="font-size:11.5px; color:var(--danger); min-height:16px; margin-bottom:6px;"></div>
+    <div class="modal-actions">
+      <button class="cancel" id="jual-rusak-cancel">Batal</button>
+      <button class="confirm" id="jual-rusak-simpan" style="background:var(--primary);">Simpan</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL LIHAT FOTO (lightbox, buat foto aset inventaris) ============ -->
 <div class="modal-overlay" id="foto-lihat-modal-overlay" style="z-index:80; background:rgba(3,3,3,0.85);">
   <div style="max-width:92vw; max-height:88vh; position:relative;">
@@ -3925,6 +3960,7 @@ function isHybridTabunganInvestasi(acc){
    ini -- nomor versi yang ditampilkan di halaman Pengaturan otomatis ikut ke-update,
    nggak perlu ubah HTML manual. */
 var CHANGELOG = [
+  { versi:"1.11.1", catatan:'Inventaris: ada "Kantong Rusak / Hilang" khusus di halaman Inventaris Aset. Aset yang dikeluarkan dengan alasan Rusak / Hilang masuk ke kantong ini, lengkap dengan tanggal, keterangan, dan total kerugian (nilai wajar saat dikeluarkan). Aset lama yang sudah dikeluarkan karena rusak ikut terhitung otomatis. Ada tombol "Jual sisa" untuk menjual aset rusak (rongsok/suku cadang): hasilnya jadi pemasukan (atau Piutang) dan mengurangi total kerugian.' },
   { versi:"1.11.0", catatan:"Fitur baru \"Dana Patungan\": kantong uang bersama untuk dua akun berbeda. Satu akun membuat kantong lalu membagikan kode undangan, akun lainnya bergabung dengan kode itu. Setoran dan penarikan masuk ke satu saldo bersama yang tampil realtime di kedua akun, dan mengurangi/menambah rekening pribadi masing-masing. Di Beranda ada tombol Pribadi / Patungan untuk berganti antara saldo pribadi dan saldo dana patungan. Perlu menambahkan Rules Firestore untuk koleksi \"patungan\" (tersedia di halaman Dana Patungan)." },
   { versi:"1.10.1", catatan:'Maskot rubah di Kesehatan Finansial diganti dengan desain baru yang lebih imut dan rapi (rubah duduk memegang koin, syal tosca). Ekspresinya berubah mengikuti skor: Sangat Sehat, Sehat, Cukup, Perlu Perhatian, Waspada, dan tidur saat belum ada data.' },
   { versi:"1.10.0", catatan:'Kategori rekening baru "Pulsa Operator" dengan rekening bawaan XL: isi saldo awal pulsa di Kelola Rekening, saldonya tampil di Dashboard. Di menu Transfer ada mode "Jual Pulsa" (Bagi Pulsa): pilih rekening pulsa, nominal pulsa yang dijual, biaya admin, dan rekening penerimaan. Uang yang diterima dihitung otomatis dan biaya admin tercatat sebagai pengeluaran dari rekening pulsa.' },
@@ -4809,8 +4845,8 @@ AI_METODE.stokDef = {
   en:'- Consumable stock uses FIFO: each purchase is a layer with its own price, usage consumes the oldest layer first, and COGS = the price of the layers used. Stock value + total usage = total purchases. Stock is not overspending until it is used.'
 };
 AI_METODE.restockDef = {
-  id:'- Rekomendasi belanja hanyalah perkiraan kasar: dari catatan pemakaian 4 minggu terakhir (minggu terbaru lebih berbobot) dan kebiasaan jarak belanjaku, bukan kebutuhan pasti. Akurasinya bergantung pada seberapa rutin pemakaian kucatat; pemakaian yang tidak dicatat tidak terdeteksi.',
-  en:'- The restock suggestions are only rough estimates: based on the last 4 weeks of logged usage (recent weeks weighted more) and my usual shopping interval, not exact needs. Accuracy depends on how consistently I log usage; unlogged usage is not detected.'
+  id:'- Rekomendasi belanja hanyalah perkiraan kasar: dari catatan pemakaian 4 minggu terakhir (minggu terbaru lebih berbobot) dan kebiasaan jarak belanjaku, bukan kebutuhan pasti. Akurasinya bergantung pada seberapa rutin pemakaian kucatat; pemakaian yang tidak dicatat tidak terdeteksi, kecuali bila catatan pakaiku jauh di bawah pola belanjaku: perkiraan lalu memakai rata-rata keduanya.',
+  en:'- The restock suggestions are only rough estimates: based on the last 4 weeks of logged usage (recent weeks weighted more) and my usual shopping interval, not exact needs. Accuracy depends on how consistently I log usage; unlogged usage is not detected, except when my logged usage is far below my purchase pattern: the estimate then uses the average of the two.'
 };
 function aiMetode(key){ var x = AI_METODE[key]; return x ? (isEN() ? x.en : x.id) : ''; }
 var DATA = { saldoAwal:{}, akunJenis:{}, akunSumber:{}, accountsCustom:[], accountInfo:{}, budgetBelanja:{}, kategoriBelanja:[], itemBelanjaCustom:[], stokAbaikan:[], stokPengaturan:{}, untukSiapa:[], jenisPengeluaran:[], jenisTagihan:[], kategoriInventaris:[], tempatBeliInventaris:[], lokasiInventaris:[], lokasiInventarisMaps:{}, sumberPemasukan:[], goals:[], recurring:[], transfer:[], pemasukan:[], pengeluaran:[], piutang:[], hutang:[], titipan:[], belanja:[], invbeli:[], invjual:[], tagihan:[], inventaris:[], splitbill:[], stokKeluar:[], asetbio:[], panenAsetBio:[], sampah:[] };
@@ -4897,6 +4933,8 @@ function fmtShort(n){
   return String(Math.round(n));
 }
 function todayISO(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); } /* tanggal LOKAL, bukan UTC */
+/* Ubah objek Date jadi 'YYYY-MM-DD' berdasarkan tanggal LOKAL (toISOString memakai UTC dan menggeser tanggal sehari di WIB). */
+function isoLokal(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 var toastTimer = null;
 function toast(msg){
   var t = document.getElementById('toast');
@@ -6696,8 +6734,20 @@ function cicilanTotal(x, lim){
   return s;
 }
 function sisaPinjamAkhir(x){ return Math.max(0, (x.jumlah||0) - cicilanTotal(x)); }
+/* Tanggal pelunasan (x.tglLunasAt) dicatat saat status berubah jadi Lunas. Untuk tanggal SEBELUM itu, item masih dianggap berjalan:
+   saldo rekening, total hutang/piutang, dan kekayaan bersih historis tidak lagi "melompat" ke keadaan lunas sebelum waktunya.
+   Data lama tanpa tglLunasAt dihitung seperti sebelumnya (pelunasan berlaku sejak tanggal transaksi). */
+function selesaiSetelah(x, lim){ return !!(lim && x && x.tglLunasAt && x.tglLunasAt > lim); }
+function stampTglLunas(rec, old){
+  var done = (rec.status==='Lunas' || rec.status==='Dikembalikan');
+  if(!done){ delete rec.tglLunasAt; return; }
+  if(rec.tglLunasAt) return;
+  var oldDone = !!(old && (old.status==='Lunas' || old.status==='Dikembalikan'));
+  if(old && oldDone){ if(old.tglLunasAt) rec.tglLunasAt = old.tglLunasAt; return; }
+  if(old && !oldDone){ var t = todayISO(); rec.tglLunasAt = (rec.tanggal && rec.tanggal>t) ? rec.tanggal : t; }
+}
 function sisaPinjam(x, lim){
-  if(x.status!=='Berjalan' && x.status!=='Belum Lunas') return 0;
+  if(x.status!=='Berjalan' && x.status!=='Belum Lunas' && !selesaiSetelah(x, lim)) return 0;
   return Math.max(0, (x.jumlah||0) - cicilanTotal(x, lim));
 }
 function piutangCaraLunas(p){
@@ -6738,6 +6788,7 @@ function settlePiutangAt(idx, cara){
   if(cara==='diberikan') p.diberikan = true; else delete p.diberikan;
   if(cara==='dibayar'){ delete p.tanggalLunas; }
   else { p.tanggalLunas = todayISO(); addPiutangSettleExpense(p, p.tanggalLunas); }
+  p.tglLunasAt = (p.tanggal && p.tanggal>todayISO()) ? p.tanggal : todayISO();
 }
 /* Hapus transaksi turunan (fee & untung/rugi) yang tertaut ke sebuah transaksi invbeli/invjual,
    dipakai sebelum membuat ulang turunan saat edit, atau saat transaksi induknya dihapus. */
@@ -6935,7 +6986,7 @@ function pgBarengForItem(orang, itemJumlah, total){
 function uoRange(){
   var mode = document.getElementById('uo-periode').value, today = todayISO();
   var d = new Date(today+'T00:00:00');
-  function iso(x){ return x.toISOString().slice(0,10); }
+  function iso(x){ return isoLokal(x); }
   function ago(n){ var x = new Date(d.getTime()-n*864e5); return iso(x); }
   var y = d.getFullYear(), m = d.getMonth()+1;
   if(mode==='7') return {from:ago(6), to:today};
@@ -7593,6 +7644,8 @@ function submitPiutang(){
   if(cara==='diberikan'){ record.diberikan = true; }
   if(cara==='diberikan' || cara==='tak-tertagih'){
     record.tanggalLunas = document.getElementById('pi-tgl-lunas').value || todayISO();
+    /* diikhlaskan / tak tertagih berlaku sejak tanggal dicatat (bukan sejak piutang dibuat) */
+    record.tglLunasAt = (record.tanggal && record.tanggal>record.tanggalLunas) ? record.tanggal : record.tanggalLunas;
   }
   var pesan;
   if(editState.type==='piutang'){
@@ -7608,6 +7661,7 @@ function submitPiutang(){
     if(oldP && oldP.splitBillId){ record.splitBillId = oldP.splitBillId; }
     record.pid = (oldP && oldP.pid) ? oldP.pid : genId('pi');
     removePiutangSettleExpense(oldP);
+    stampTglLunas(record, oldP);
     DATA.piutang[editState.index]=record;
     pesan = 'Piutang diperbarui';
   }
@@ -7645,6 +7699,7 @@ function submitHutang(){
       if(record.status==='Belum Lunas' && jumlah===sudahBayar){ tandaiLunasOtomatis('hutang', record); }
       else if(oldH.lunasOtomatis && record.status==='Lunas' && jumlah===sudahBayar){ record.lunasOtomatis = true; }
     }
+    stampTglLunas(record, oldH);
     DATA.hutang[editState.index]=record; finishEdit('hutang','Hutang diperbarui');
   }
   else { DATA.hutang.push(record); toast('Hutang '+fmt(jumlah)+' tersimpan'); }
@@ -8076,7 +8131,7 @@ function submitTagihan(){
   var pesanBiaya = biaya>0 ? (' + Biaya admin '+fmt(biaya)) : '';
   var pesanSplit = tgSplitEnabled ? (' • porsi kamu '+fmt(jumlahUntukRecord)+' dari total '+fmt(totalTagihan)) : '';
   var pesan = 'Tagihan '+fmt(jumlahUntukRecord)+pesanBiaya+pesanSplit+' tersimpan';
-  if(editState.type==='tagihan'){ DATA.tagihan[editState.index]=record; finishEdit('tagihan', 'Tagihan diperbarui'+pesanBiaya+pesanSplit); }
+  if(editState.type==='tagihan'){ stampTglLunas(record, oldT); DATA.tagihan[editState.index]=record; finishEdit('tagihan', 'Tagihan diperbarui'+pesanBiaya+pesanSplit); }
   else { DATA.tagihan.push(record); toast(pesan); }
   saveData();
   document.getElementById('tg-jumlah').value=''; document.getElementById('tg-biaya').value=''; document.getElementById('tg-jatuh-tempo').value=''; document.getElementById('tg-ket').value=''; document.getElementById('tg-cicilan-bln').value=''; document.getElementById('tg-cicilan-tgl').value=''; setMerchant('tg','');
@@ -8117,6 +8172,7 @@ function saldoAkun(acc, upToDate){
   DATA.piutang.forEach(function(p){
     if(lim && p.tanggal>lim) return;
     var sisaP = sisaPinjamAkhir(p);
+    var lunasBerlaku = (p.status==='Lunas' && !selesaiSetelah(p, lim)); /* pelunasan sudah terjadi pada tanggal ini */
     /* Cicilan piutang yang sudah diterima: uang masuk ke rekening tiap cicilan */
     cicilanOf(p).forEach(function(c){ if(lim && c.tanggal>lim) return; if((c.metode||p.metode)===acc) v += c.jumlah; });
     if(p.linkKind){
@@ -8124,14 +8180,14 @@ function saldoAkun(acc, upToDate){
          sejak awal (bukan uang yang kamu pinjamkan keluar dari rekening). Saldo baru
          bertambah begitu piutang ini ditandai Lunas (uangnya beneran diterima).
          Kalau sudah ada cicilan, yang ditambah hanya SISA-nya. */
-      if(p.status==='Lunas' && piutangCaraLunas(p)==='dibayar' && p.metode===acc) v += sisaP;
+      if(lunasBerlaku && piutangCaraLunas(p)==='dibayar' && p.metode===acc) v += sisaP;
     } else {
       if(p.metode===acc){
         /* Berjalan: seluruh pokok keluar dari rekening. Lunas (cara apa pun): yang dihitung keluar
            = bagian yang sudah kembali lewat cicilan (sisa yang dikembalikan / diikhlaskan tidak
            mengubah saldo di sini; yang diikhlaskan dicatat sebagai pengeluaran terpisah). */
-        if(p.status==='Berjalan') v -= p.jumlah;
-        else if(p.status==='Lunas') v -= (p.jumlah - sisaP);
+        if(p.status==='Berjalan' || (p.status==='Lunas' && !lunasBerlaku)) v -= p.jumlah;
+        else if(lunasBerlaku) v -= (p.jumlah - sisaP);
       }
     }
   });
@@ -8140,7 +8196,7 @@ function saldoAkun(acc, upToDate){
     if(h.metode===acc) v += h.jumlah;
     /* Cicilan hutang yang sudah dibayar: uang keluar dari rekening tiap cicilan */
     cicilanOf(h).forEach(function(c){ if(lim && c.tanggal>lim) return; if((c.metode||h.metode)===acc) v -= c.jumlah; });
-    if(h.status==='Lunas'){
+    if(h.status==='Lunas' && !selesaiSetelah(h, lim)){
       var bayarAcc = h.metodeBayar || h.metode;
       if(bayarAcc===acc) v -= sisaPinjamAkhir(h);
     }
@@ -8148,7 +8204,7 @@ function saldoAkun(acc, upToDate){
   DATA.titipan.forEach(function(t){
     if(lim && t.tanggal>lim) return;
     if(t.metode===acc && !t.tanpaSaldo) v += t.jumlah; /* tanpaSaldo = uang sendiri hasil transfer, sudah ada di saldo */
-    if(t.status==='Dikembalikan' && !t.catatPg){
+    if(t.status==='Dikembalikan' && !t.catatPg && !(lim && t.tanggalKembali && t.tanggalKembali>lim)){
       var bayarAccTt = t.metodeBayar || t.metode;
       if(bayarAccTt===acc) v -= t.jumlah;
     }
@@ -8158,7 +8214,7 @@ function saldoAkun(acc, upToDate){
   DATA.tagihan.forEach(function(t){
     if(lim && t.tanggal>lim) return;
     cicilanOf(t).forEach(function(c){ if(lim && c.tanggal>lim) return; if((c.metode||t.metode)===acc) v -= c.jumlah; });
-    if(t.metode===acc && t.status==='Lunas') v -= sisaPinjamAkhir(t);
+    if(t.metode===acc && t.status==='Lunas' && !selesaiSetelah(t, lim)) v -= sisaPinjamAkhir(t);
   });
   /* Koreksi hasil rekonsiliasi: hanya mengubah saldo rekening, bukan pemasukan/pengeluaran di laporan */
   (DATA.koreksi||[]).forEach(function(k){ if(lim && k.tanggal>lim) return; if(k.metode===acc) v += (k.jumlah||0); });
@@ -8308,18 +8364,18 @@ function renderAccountsList(){
 }
 function totalPiutang(upToDate){
   var lim = upToDate||null, s=0;
-  DATA.piutang.forEach(function(p){ if(lim && p.tanggal>lim) return; if(p.status==='Berjalan') s+=sisaPinjam(p, lim); });
+  DATA.piutang.forEach(function(p){ if(lim && p.tanggal>lim) return; if(p.status==='Berjalan' || selesaiSetelah(p, lim)) s+=sisaPinjam(p, lim); });
   return s;
 }
 function totalHutang(upToDate){
   var lim = upToDate||null, s=0;
-  DATA.hutang.forEach(function(h){ if(lim && h.tanggal>lim) return; if(h.status==='Belum Lunas') s+=sisaPinjam(h, lim); });
-  DATA.tagihan.forEach(function(t){ if(lim && t.tanggal>lim) return; if(t.status==='Belum Lunas') s+=sisaPinjam(t, lim); });
+  DATA.hutang.forEach(function(h){ if(lim && h.tanggal>lim) return; if(h.status==='Belum Lunas' || selesaiSetelah(h, lim)) s+=sisaPinjam(h, lim); });
+  DATA.tagihan.forEach(function(t){ if(lim && t.tanggal>lim) return; if(t.status==='Belum Lunas' || selesaiSetelah(t, lim)) s+=sisaPinjam(t, lim); });
   return s;
 }
 function totalTitipan(upToDate){
   var lim = upToDate||null, s=0;
-  DATA.titipan.forEach(function(t){ if(lim && t.tanggal>lim) return; if(t.status==='Aktif') s+=t.jumlah; });
+  DATA.titipan.forEach(function(t){ if(lim && t.tanggal>lim) return; if(t.status==='Aktif' || (lim && t.status==='Dikembalikan' && t.tanggalKembali && t.tanggalKembali>lim)) s+=t.jumlah; }); /* sudah dikembalikan tapi belum pada tanggal ini = masih dipegang */
   return s;
 }
 
@@ -9394,11 +9450,11 @@ window.addEventListener('afterprint', function(){
 
 /* ============ RIWAYAT TRANSAKSI (halaman terpisah, bisa difilter tanggal) ============ */
 function weekStartStr(d){
-  var dt = new Date(d);
+  var dt = (typeof d==='string') ? new Date(d+'T00:00:00') : new Date(d);
   var day = dt.getDay();
   var diff = (day===0 ? -6 : 1-day);
   dt.setDate(dt.getDate()+diff);
-  return dt.toISOString().slice(0,10);
+  return isoLokal(dt);
 }
 var RW_TYPE_LABEL = {transfer:'Transfer', pemasukan:'Pemasukan', pengeluaran:'Pengeluaran', piutang:'Piutang', hutang:'Hutang', belanja:'Belanja', invbeli:'Beli Investasi', invjual:'Jual Investasi', tagihan:'Tagihan'};
 function renderRiwayat(){
@@ -9887,6 +9943,14 @@ function buildAiPrompt(){
           iv.kat.slice(0,5).forEach(function(c){ L.push('  - '+c.k+': '+c.n+Q(' barang, harga beli ',' items, purchase price ')+fmt(c.harga)); });
         }
         if(iv.bioN>0) L.push(Q('- Aset biologis aktif: '+iv.bioN+', modal '+fmt(iv.bioModal)+', estimasi nilai wajar '+fmt(iv.bioWajar),'- Active biological assets: '+iv.bioN+', cost '+fmt(iv.bioModal)+', estimated fair value '+fmt(iv.bioWajar)));
+        try{
+          var rsk = (DATA.inventaris||[]).filter(function(x){ return x.dikeluarkan && !x.terjual && x.alasanKeluar==='Rusak / Hilang'; });
+          if(rsk.length){
+            var rskNilai = 0, rskJual = 0;
+            rsk.forEach(function(x){ rskNilai += invNilaiRugi(x); rskJual += (x.hasilJualRusak||0); });
+            L.push(Q('- Aset inventaris rusak/hilang (sudah dikeluarkan, seluruh riwayat): '+rsk.length+' barang, nilai saat dikeluarkan '+fmt(rskNilai)+', hasil jual sisa '+fmt(rskJual)+', '+(rskNilai-rskJual<0?'untung bersih ':'kerugian bersih ')+fmt(Math.abs(rskNilai-rskJual))+'. Ini kerugian nilai aset (bukan uang keluar baru); hasil jual sisa masuk sebagai pemasukan non-rutin.','- Damaged/lost equipment (already removed, all time): '+rsk.length+' items, value when removed '+fmt(rskNilai)+', salvage sales '+fmt(rskJual)+', '+(rskNilai-rskJual<0?'net gain ':'net loss ')+fmt(Math.abs(rskNilai-rskJual))+'. This is an asset value loss (not new cash out); salvage proceeds count as non-routine income.'));
+          }
+        }catch(e2){}
         L.push(Q('- Ini aset yang tidak mudah dicairkan; nilainya perkiraan, bukan harga pasar.','- These are not easily liquidated; values are estimates, not market prices.'));
       }
     }catch(err){}
@@ -9982,7 +10046,7 @@ function buildAiPrompt(){
 /* ===== UJI KONSISTENSI PROMPT ANALISIS AI (alat pengembang, tidak dipanggil dari UI) =====
    Jalankan di console: cekKonsistensiAI()  -> tabel hasil. Membandingkan angka di prompt dengan sumber aslinya
    dan memeriksa apakah fungsi rumus berubah sejak terakhir kalimat penjelas ditinjau (AI_METODE_BASELINE). */
-var AI_METODE_BASELINE = {"PEMASUKAN_NON_RUTIN_RE": "201e2132", "akunAutoJenis": "32088f2b", "akunOfBelanja": "716d8521", "akunOfPengeluaran": "1e8358a", "akunOfTagihan": "907adb50", "akunPakaiStok": "37aae6b5", "akunTotals": "5ba68ccb", "belanjaTerpakaiKategori": "80821e2a", "bulanPenuhSebelum": "86e53f40", "cicilanTotal": "13f6031", "danaDaruratNominal": "73725824", "getModalMap": "94a8cf47", "goalDisisihkanAkun": "716f3d82", "isPemasukanNonRutin": "d081ee91", "ksCicilanBulanan": "4c4a51f2", "ksDanaDarurat": "a8142c98", "ksMonthSamples": "f345132b", "nilaiInvestasiAkun": "2a38451e", "saldoAkun": "cd756522", "sisaPinjam": "a0668c1e", "titipanAkun": "7e503ac2", "totalHutang": "9d38f170", "totalPiutang": "611fcf5c", "totalTitipan": "26d290bf", "netWorthAt": "d6d08c84", "nwInventarisNilai": "46177aff", "nwAsetBioNilai": "f7b8cb38", "nwKoreksi": "128b346f", "nwRangeSeries": "24327a0a", "computeHealthScore": "daa2e3bb", "ksTagihanTelat": "f7b03c45", "stokLajuPakai": "ef2cef5", "intervalBelanjaHari": "74248d5b", "stokKemasanLazim": "d26a028", "analisisStokItem": "68d4bbe", "daftarBelanjaStok": "8e086e6", "arsipSaldoEfektif": "d9a2a75e", "fifoHitung": "5ed85450", "hitungStokItem": "5a86f113", "stokCfg": "db67787f", "stokRingkasan": "aa0be935", "invRingkasan": "8c037579"};
+var AI_METODE_BASELINE = {"PEMASUKAN_NON_RUTIN_RE":"201e2132","akunAutoJenis":"32088f2b","akunOfBelanja":"716d8521","akunOfPengeluaran":"1e8358a","akunOfTagihan":"907adb50","akunPakaiStok":"37aae6b5","akunTotals":"5ba68ccb","belanjaTerpakaiKategori":"80821e2a","bulanPenuhSebelum":"86e53f40","cicilanTotal":"13f6031","danaDaruratNominal":"73725824","getModalMap":"94a8cf47","goalDisisihkanAkun":"716f3d82","isPemasukanNonRutin":"d081ee91","ksCicilanBulanan":"4c4a51f2","ksDanaDarurat":"a8142c98","ksMonthSamples":"f345132b","nilaiInvestasiAkun":"2a38451e","saldoAkun":"13df4457","sisaPinjam":"e91cb26e","titipanAkun":"7e503ac2","totalHutang":"248f02b2","totalPiutang":"78ed12af","totalTitipan":"25081fff","netWorthAt":"d6d08c84","nwInventarisNilai":"46177aff","nwAsetBioNilai":"f7b8cb38","nwKoreksi":"b6edc26","nwRangeSeries":"24327a0a","computeHealthScore":"daa2e3bb","ksTagihanTelat":"f7b03c45","stokLajuPakai":"ef2cef5","intervalBelanjaHari":"74248d5b","stokKemasanLazim":"d26a028","analisisStokItem":"e31efce4","daftarBelanjaStok":"8e086e6","arsipSaldoEfektif":"d9a2a75e","fifoHitung":"5ed85450","hitungStokItem":"5a86f113","stokCfg":"db67787f","stokRingkasan":"aa0be935","invRingkasan":"8c037579"};
 var AI_METODE_PETA = {
   akunTotals:['bebanDef','asetStokBukanBoros','tagihanBasis','angkaSiap'],
   akunPakaiStok:['bebanDef','stokPakaiEst'],
@@ -11197,6 +11261,11 @@ function renderCicilanModal(){
 function tandaiLunasOtomatis(type, x, metode, tanggal){
   x.status = 'Lunas';
   x.lunasOtomatis = true;
+  /* tanggal pelunasan = tanggal terakhir di antara transaksi, cicilan, dan tanggal yang diberikan */
+  var tl = tanggal || '';
+  cicilanOf(x).forEach(function(c){ if(c.tanggal && c.tanggal>tl) tl = c.tanggal; });
+  if(x.tanggal && x.tanggal>tl) tl = x.tanggal;
+  x.tglLunasAt = tl || todayISO();
   if(type==='piutang'){ x.pelunasan = 'dibayar'; delete x.diberikan; delete x.tanggalLunas; }
   else if(type==='tagihan'){
     /* Split bill di Tagihan: piutang peserta baru dibuat begitu tagihan benar-benar lunas ditalangin */
@@ -11214,7 +11283,7 @@ function tandaiLunasOtomatis(type, x, metode, tanggal){
   else { x.metodeBayar = x.metodeBayar || x.metode; }
 }
 function batalkanLunasOtomatis(type, x){
-  delete x.lunasOtomatis;
+  delete x.lunasOtomatis; delete x.tglLunasAt;
   if(type==='piutang'){ x.status = 'Berjalan'; delete x.pelunasan; delete x.diberikan; delete x.tanggalLunas; }
   else if(type==='tagihan'){
     x.status = 'Belum Lunas';
@@ -13048,7 +13117,12 @@ function renderInventarisDetail(){
     keluarRowsEl.innerHTML =
       invdRow('Tanggal Dikeluarkan', item.tanggalKeluar||'-')+
       invdRow('Alasan', escapeHtml(item.alasanKeluar||'-'))+
-      (item.ketKeluar ? invdRow('Keterangan', escapeHtml(item.ketKeluar)) : '');
+      (item.ketKeluar ? invdRow('Keterangan', escapeHtml(item.ketKeluar)) : '')+
+      (item.alasanKeluar==='Rusak / Hilang'
+        ? invdRow('Nilai Saat Dikeluarkan', fmt(invNilaiRugi(item)))+
+          (item.hasilJualRusak ? invdRow('Hasil Jual Sisa', '<span style="color:var(--pos); font-weight:700;">'+fmt(item.hasilJualRusak)+'</span> <span style="color:var(--text-2); font-size:11.5px;">('+(item.statusJualRusak==='Piutang'?'belum diterima, piutang':'sudah diterima')+(item.tanggalJualRusak?' • '+item.tanggalJualRusak:'')+')</span>') : '')+
+          invdRow(invRugiBersih(item)<0?'Untung Bersih':'Kerugian Bersih', '<span style="color:'+(invRugiBersih(item)<0?'var(--pos)':'var(--danger)')+'; font-weight:700;">'+fmt(Math.abs(invRugiBersih(item)))+'</span>')
+        : '');
   } else if(keluarCard){
     keluarCard.style.display = 'none';
   }
@@ -13181,6 +13255,8 @@ function simpanKeluarkanAset(){
     item.alasanKeluar = alasan;
     item.tanggalKeluar = todayISO();
     item.ketKeluar = ket;
+    // Nilai aset saat dikeluarkan (harga wajar setelah penyusutan), dipakai Kantong Rusak / Hilang
+    item.nilaiSaatKeluar = hitungHargaWajar(item); /* tahun dikeluarkan = tahun ini, jadi sama dengan rumus kekayaan bersih */
     saveData();
     if(INV_EDIT_ID===id) invResetForm();
     tutupKeluarkanAset();
@@ -13191,6 +13267,118 @@ function simpanKeluarkanAset(){
     toast('Aset "'+nama+'" dikeluarkan ('+alasan+(ket?' • '+ket:'')+'), tetap tersimpan di riwayat');
     if(INVD_ID===id) renderInventarisDetail();
   }
+}
+/* Kantong Rusak / Hilang: daftar aset inventaris yang dikeluarkan karena rusak/hilang + total kerugiannya.
+   Hanya rekap -- tidak menyentuh saldo rekening atau transaksi (pembelian lama tetap utuh). */
+function invNilaiRugi(x){
+  if(typeof x.nilaiSaatKeluar==='number') return x.nilaiSaatKeluar;
+  /* data lama (belum ada nilai tersimpan): hitung pada tahun dikeluarkan, sama seperti rumus kekayaan bersih, bukan tahun ini */
+  var harga = x.harga||0, rate = x.penyusutan||0, th = x.tanggalKeluar ? parseInt(String(x.tanggalKeluar).slice(0,4),10) : new Date().getFullYear();
+  if(!x.tahun || !rate || !th) return harga;
+  var n = Math.pow(1-rate/100, Math.max(0, th-x.tahun));
+  return Math.round(isFinite(n) && n>0 ? harga*n : 0);
+}
+function invRugiBersih(x){
+  return invNilaiRugi(x) - (x.hasilJualRusak||0); /* bisa negatif = untung (hasil jual sisa melebihi nilai aset) */
+}
+var JUAL_RUSAK_ID = null, JUAL_RUSAK_BAYAR = 'diterima';
+function jualRusakSetBayar(val){
+  JUAL_RUSAK_BAYAR = val;
+  document.getElementById('jual-rusak-bayar-diterima').classList.toggle('active', val==='diterima');
+  document.getElementById('jual-rusak-bayar-piutang').classList.toggle('active', val==='piutang');
+  document.getElementById('jual-rusak-piutang-wrap').style.display = (val==='piutang') ? '' : 'none';
+  document.getElementById('jual-rusak-rekening-label').textContent = (val==='piutang') ? 'Rekening Tujuan Nanti (saat lunas)' : 'Rekening Penerimaan';
+}
+function bukaJualRusak(id){
+  var item = DATA.inventaris.filter(function(x){ return x.id===id; })[0];
+  if(!item) return;
+  if(item.hasilJualRusak){ toast('Aset ini sudah dijual'); return; }
+  JUAL_RUSAK_ID = id;
+  document.getElementById('jual-rusak-info').textContent = item.nama+' • Nilai kerugian '+fmt(invNilaiRugi(item));
+  document.getElementById('jual-rusak-harga').value = '';
+  document.getElementById('jual-rusak-piutang-nama').value = '';
+  document.getElementById('jual-rusak-err').textContent = '';
+  fillSelectAccounts('jual-rusak-rekening', ACCOUNTS);
+  jualRusakSetBayar('diterima');
+  document.getElementById('jual-rusak-modal-overlay').classList.add('show');
+}
+function tutupJualRusak(){
+  document.getElementById('jual-rusak-modal-overlay').classList.remove('show');
+  JUAL_RUSAK_ID = null;
+}
+function simpanJualRusak(){
+  var item = DATA.inventaris.filter(function(x){ return x.id===JUAL_RUSAK_ID; })[0];
+  var err = document.getElementById('jual-rusak-err');
+  if(!item){ tutupJualRusak(); return; }
+  var harga = parseMoneyValue(document.getElementById('jual-rusak-harga').value);
+  var akun = document.getElementById('jual-rusak-rekening').value;
+  if(!harga || harga<=0){ err.textContent = 'Isi hasil penjualan dulu'; return; }
+  if(!akun){ err.textContent = 'Pilih rekening dulu'; return; }
+  var id = item.id;
+  item.hasilJualRusak = harga;
+  item.tanggalJualRusak = todayISO();
+  item.rekeningJualRusak = akun;
+  if(JUAL_RUSAK_BAYAR==='piutang'){
+    item.statusJualRusak = 'Piutang';
+    DATA.piutang.push({
+      tanggal: todayISO(), metode: akun, jumlah: harga,
+      nama: (document.getElementById('jual-rusak-piutang-nama').value||'').trim() || ('Pembeli aset rusak "'+item.nama+'"'),
+      status:'Berjalan', jatuhTempo:'',
+      ket: 'Piutang dari jual aset rusak "'+item.nama+'"', linkId: id, linkKind: 'inv-jual-rusak'
+    });
+    saveData(); tutupJualRusak();
+    toast('Aset rusak "'+item.nama+'" terjual '+fmt(harga)+', belum dibayar — dicatat sebagai Piutang');
+    renderPiutangList(); renderReminders();
+  } else {
+    item.statusJualRusak = 'Diterima';
+    DATA.pemasukan.push({
+      tanggal: todayISO(), sumber: 'Jual Aset Rusak', metode: akun, jumlah: harga,
+      ket: 'Jual aset rusak "'+item.nama+'"', linkId: id, linkKind: 'inv-jual-rusak'
+    });
+    saveData(); tutupJualRusak();
+    toast('Aset rusak "'+item.nama+'" terjual, saldo '+akun+' bertambah '+fmt(harga));
+    renderPemasukanList();
+  }
+  renderInventarisList();
+  if(INVD_ID===id) renderInventarisDetail();
+}
+function renderInvRusakKantong(){
+  var card = document.getElementById('inv-rusak-card');
+  if(!card) return;
+  var rusak = (DATA.inventaris||[]).filter(function(x){ return x.dikeluarkan && !x.terjual && x.alasanKeluar==='Rusak / Hilang'; });
+  card.style.display = rusak.length ? '' : 'none';
+  if(!rusak.length) return;
+  rusak.sort(function(a,b){ return String(b.tanggalKeluar||'').localeCompare(String(a.tanggalKeluar||'')); });
+  var total = 0;
+  rusak.forEach(function(x){ total += invRugiBersih(x); });
+  var tEl = document.getElementById('inv-rusak-total'); if(tEl){ tEl.textContent = maskOrFmt(Math.abs(total)); tEl.style.color = total<0 ? 'var(--pos)' : 'var(--danger)'; }
+  var tLb = document.getElementById('inv-rusak-total-label'); if(tLb) tLb.textContent = total<0 ? 'Total Untung' : 'Total Kerugian';
+  var cEl = document.getElementById('inv-rusak-count'); if(cEl) cEl.textContent = rusak.length;
+  var lEl = document.getElementById('inv-rusak-list'); if(!lEl) return;
+  lEl.innerHTML = rusak.map(function(x){
+    return '<div class="inv-rusak-row" data-inv-rusak-id="'+escapeHtml(String(x.id))+'" style="display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-top:1px solid var(--line); cursor:pointer;">'+
+      '<div style="min-width:0;"><div style="font-weight:700; font-size:13px;">'+escapeHtml(x.nama||'-')+'</div>'+
+      '<div class="meta-sub">'+escapeHtml(x.tanggalKeluar||'-')+(x.ketKeluar?' • '+escapeHtml(x.ketKeluar):'')+'</div></div>'+
+      '<div style="text-align:right; white-space:nowrap;"><div class="mono" style="font-weight:700; font-size:13px; color:'+(invRugiBersih(x)<0?'var(--pos)':'var(--danger)')+';">'+(invRugiBersih(x)<0?'+':'-')+maskOrFmt(Math.abs(invRugiBersih(x)))+'</div>'+
+      (x.hasilJualRusak
+        ? '<div class="meta-sub" style="color:var(--pos);">Terjual '+maskOrFmt(x.hasilJualRusak)+(x.statusJualRusak==='Piutang'?' (piutang)':'')+'</div>'
+        : '<span data-jual-rusak="'+escapeHtml(String(x.id))+'" style="font-size:11px; font-weight:700; color:var(--primary); cursor:pointer;">Jual sisa</span>')+
+      '</div></div>';
+  }).join('');
+  Array.prototype.forEach.call(lEl.querySelectorAll('.inv-rusak-row'), function(row){
+    row.addEventListener('click', function(ev){
+      var jb = ev.target.closest ? ev.target.closest('[data-jual-rusak]') : null;
+      if(jb){
+        var jid = jb.getAttribute('data-jual-rusak');
+        var jit = DATA.inventaris.filter(function(z){ return String(z.id)===jid; })[0];
+        if(jit) bukaJualRusak(jit.id);
+        return;
+      }
+      var rid = row.getAttribute('data-inv-rusak-id');
+      var it = DATA.inventaris.filter(function(z){ return String(z.id)===rid; })[0];
+      if(it) bukaInventarisDetail(it.id);
+    });
+  });
 }
 function renderInventarisFilterKategori(){
   var el = document.getElementById('inv-filter-kategori');
@@ -13257,6 +13445,7 @@ function renderInventarisList(){
   var aktif = DATA.inventaris.filter(function(x){ return !x.terjual && !x.dikeluarkan; });
   var terjualCount = DATA.inventaris.filter(function(x){ return x.terjual; }).length;
   var dikeluarkanCount = DATA.inventaris.filter(function(x){ return x.dikeluarkan && !x.terjual; }).length;
+  try{ renderInvRusakKantong(); }catch(e){}
   var totalNilai = 0;
   aktif.forEach(function(x){ totalNilai += (INV_NILAI_MODE==='wajar') ? hitungHargaWajar(x) : (x.harga||0); });
   if(totalEl) totalEl.textContent = fmt(totalNilai);
@@ -13343,7 +13532,7 @@ function renderInventarisList(){
         (x.terjual ? '<div class="inv-meta">Terjual '+(x.tanggalJual||'-')+' • Rp'+fmt(x.hargaJual||0)+' masuk ke '+escapeHtml(x.rekeningJual||'-')+
           (x.untungRugiJual!==undefined ? ' • <span style="color:'+(x.untungRugiJual>=0?'var(--pos)':'var(--danger)')+'; font-weight:700;">'+(x.untungRugiJual>=0?'Untung ':'Rugi ')+fmt(Math.abs(x.untungRugiJual))+'</span>' : '')+
           '</div>' : '')+
-        (x.dikeluarkan && !x.terjual ? '<div class="inv-meta">Dikeluarkan '+(x.tanggalKeluar||'-')+' • '+escapeHtml(x.alasanKeluar||'-')+(x.ketKeluar?' • '+escapeHtml(x.ketKeluar):'')+'</div>' : '')+
+        (x.dikeluarkan && !x.terjual ? '<div class="inv-meta">Dikeluarkan '+(x.tanggalKeluar||'-')+' • '+escapeHtml(x.alasanKeluar||'-')+(x.ketKeluar?' • '+escapeHtml(x.ketKeluar):'')+(x.hasilJualRusak?' • Sisa terjual '+fmt(x.hasilJualRusak):'')+'</div>' : '')+
         '<div style="display:flex; gap:14px; margin-top:8px;">'+actionsHtml+
         '</div>'+
       '</div>'+
@@ -14301,14 +14490,14 @@ function inventarisFiltered(){
 function exportInventarisCSV(){
   var list = inventarisFiltered();
   if(list.length===0){ toast('Nggak ada aset yang cocok buat diekspor'); return; }
-  var rows = [['Nama Aset','Kategori','Tahun Perolehan','Kondisi','Harga Beli (Rp)','Penyusutan/Tahun (%)','Estimasi Harga Wajar Sekarang (Rp)','Tempat Beli','Lokasi','Rincian','Status','Tanggal Dicatat','Tanggal Jual/Keluar','Alasan Keluar','Harga Jual (Rp)','Untung/Rugi Jual (Rp)','Keterangan Keluar']];
+  var rows = [['Nama Aset','Kategori','Tahun Perolehan','Kondisi','Harga Beli (Rp)','Penyusutan/Tahun (%)','Estimasi Harga Wajar Sekarang (Rp)','Tempat Beli','Lokasi','Rincian','Status','Tanggal Dicatat','Tanggal Jual/Keluar','Alasan Keluar','Harga Jual (Rp)','Untung/Rugi Jual (Rp)','Keterangan Keluar','Hasil Jual Sisa Rusak (Rp)']];
   list.forEach(function(x){
     var status = x.terjual ? 'Terjual' : (x.dikeluarkan ? 'Dikeluarkan' : 'Aktif');
     rows.push([
       x.nama||'', x.kategori||'', x.tahun||'', x.kondisi||'', Math.round(x.harga||0),
       x.penyusutan||0, hitungHargaWajar(x), x.tempatBeli||'', x.lokasi||'', x.rincian||'',
       status, x.dicatatPada||'', x.tanggalJual||x.tanggalKeluar||'', x.alasanKeluar||'',
-      x.hargaJual?Math.round(x.hargaJual):'', (x.terjual && x.untungRugiJual!==undefined)?Math.round(x.untungRugiJual):'', x.ketKeluar||''
+      x.hargaJual?Math.round(x.hargaJual):'', (x.terjual && x.untungRugiJual!==undefined)?Math.round(x.untungRugiJual):'', x.ketKeluar||'', x.hasilJualRusak?Math.round(x.hasilJualRusak):''
     ]);
   });
   downloadCSV('tumbuh-kaya-inventaris-'+todayISO()+'.csv', rows);
@@ -14411,17 +14600,15 @@ function analisisStokItem(nama, stok){
   keluar.forEach(function(k){
     var t = new Date(k.tanggal+'T00:00:00').getTime();
     if(first===null || t<first) first = t;
-    if(today - t <= 30*DAY) pakai30 += (k.qty||0);
+    if(today - t < 30*DAY) pakai30 += (k.qty||0);
   });
   var fifo = fifoHitung(), fifoItem = fifo.per[nama] || { nilai:0, tanpaHarga:0, kurang:0 }, biaya30 = 0;
   (DATA.stokKeluar||[]).forEach(function(k, i){
     if(k.item!==nama || !k.tanggal) return;
-    if(today - new Date(k.tanggal+'T00:00:00').getTime() <= 30*DAY) biaya30 += (fifo.cost[i]||0);
+    if(today - new Date(k.tanggal+'T00:00:00').getTime() < 30*DAY) biaya30 += (fifo.cost[i]||0);
   });
   var rate = 0; // qty per hari
   if(first!==null && pakai30>0) rate = stokLajuPakai(keluar, first, today);
-  var rateCatat = rate, kurangCatat = false;
-  if(rate>0 && rateBeli>0 && rate < rateBeli*0.6){ rate = (rate+rateBeli)/2; kurangCatat = true; }   /* catatan pakai jauh di bawah pola belanja: pemakaian kemungkinan belum dicatat semua */
   var riwayatHari = first!==null ? Math.min(30, Math.round((today-first)/DAY)+1) : 0;
   /* pola belanja: kebutuhan yang tersirat dari seberapa sering & berapa banyak kamu membeli (tanpa melihat catatan pakai) */
   var polaBeli = [], tglBeli = {};
@@ -14433,6 +14620,9 @@ function analisisStokItem(nama, stok){
     gaps.sort(function(a,b){ return a-b; }); qs.sort(function(a,b){ return a-b; });
     if(spanB>=21){ rateBeli = qExc/spanB; selangBeli = gaps[Math.floor(gaps.length/2)]; qtyBiasa = qs[Math.floor(qs.length/2)]; }
   }
+  /* Dihitung SETELAH rateBeli terisi (sebelumnya rateBeli masih undefined di titik ini sehingga blend tidak pernah aktif). */
+  var rateCatat = rate, kurangCatat = false;
+  if(rate>0 && rateBeli>0 && rate < rateBeli*0.6){ rate = (rate+rateBeli)/2; kurangCatat = true; }   /* catatan pakai jauh di bawah pola belanja: pemakaian kemungkinan belum dicatat semua */
   var nKejadian = keluar.filter(function(k){ return today - new Date(k.tanggal+'T00:00:00').getTime() <= 28*DAY; }).length;
   var totQty = 0, totRp = 0;
   DATA.belanja.forEach(function(b){
@@ -16015,10 +16205,10 @@ function renderRataRataHarian(){
     DATA.pengeluaran.forEach(function(p){ if(p.tanggal) allDates.push(p.tanggal); });
     DATA.belanja.forEach(function(b){ if(b.tanggal) allDates.push(b.tanggal); });
     allDates.sort();
-    startDate = allDates.length ? new Date(allDates[0]) : endDate;
+    startDate = allDates.length ? new Date(allDates[0]+'T00:00:00') : endDate;
     perKategoriSejakAwal = true;
   }
-  function toStr(d){ return d.toISOString().slice(0,10); }
+  function toStr(d){ return isoLokal(d); }
   var startStr = toStr(startDate), endStr = toStr(endDate);
   var totalHari = Math.max(1, Math.round((endDate - startDate)/86400000) + 1);
 
@@ -16052,7 +16242,7 @@ function renderRataRataHarian(){
     if(perKategoriSejakAwal && r.firstTgl){
       /* Kategori yang baru muncul belakangan dihitung sejak transaksi pertamanya sendiri,
          bukan sejak hari pertama aplikasi dipakai — biar rata-ratanya tidak keteter kecil. */
-      hariUntukRata = Math.max(1, Math.round((endDate - new Date(r.firstTgl))/86400000) + 1);
+      hariUntukRata = Math.max(1, Math.round((endDate - new Date(r.firstTgl+'T00:00:00'))/86400000) + 1);
     }
     r.avg = r.total / hariUntukRata;
     r.hariAktif = hariUntukRata;
@@ -17181,20 +17371,18 @@ function nwTglBeli(id, kind){
    itu dikembalikan di sini supaya riwayatnya tidak menyimpang. */
 function nwKoreksi(upToDate){
   var D = upToDate, kas = 0, titipan = 0;
+  /* Item dengan tglLunasAt (dicatat sejak versi ini) sudah dimodelkan per tanggal oleh saldoAkun/totalHutang/totalPiutang/totalTitipan,
+     jadi tidak perlu dikoreksi lagi sebelum tanggal pelunasannya. Koreksi ini hanya untuk data lama yang tidak punya tanggal pelunasan. */
   DATA.hutang.concat(DATA.tagihan).forEach(function(x){
-    if(x.tanggal > D || x.status!=='Lunas') return;
+    if(x.tanggal > D || x.status!=='Lunas' || selesaiSetelah(x, D)) return;
     kas -= (cicilanTotal(x) - cicilanTotal(x, D));
   });
   DATA.piutang.forEach(function(p){
-    if(p.tanggal > D || p.status!=='Lunas') return;
+    if(p.tanggal > D || p.status!=='Lunas' || selesaiSetelah(p, D)) return;
     if(p.linkKind && piutangCaraLunas(p)!=='dibayar') return;
     kas += (cicilanTotal(p) - cicilanTotal(p, D));
   });
-  DATA.titipan.forEach(function(t){
-    if(t.tanggal > D || t.status!=='Dikembalikan' || !t.tanggalKembali || D >= t.tanggalKembali) return;
-    if(!t.catatPg) kas += t.jumlah;   /* saldoAkun sudah memotong penyerahan di semua bulan */
-    titipan += t.jumlah;              /* pada bulan itu uangnya masih dipegang */
-  });
+  /* Dana titipan yang sudah dikembalikan: penyerahannya kini diterapkan per tanggal (tanggalKembali) di saldoAkun dan totalTitipan, tanpa koreksi di sini. */
   return { kas:kas, titipan:titipan };
 }
 function nwInventarisNilai(upToDate){
@@ -17951,6 +18139,11 @@ function wireEvents(){
     if(ev.target===this) tutupFotoLihat();
   });
   document.getElementById('keluar-aset-simpan').addEventListener('click', simpanKeluarkanAset);
+  document.getElementById('jual-rusak-cancel').addEventListener('click', tutupJualRusak);
+  document.getElementById('jual-rusak-simpan').addEventListener('click', simpanJualRusak);
+  document.getElementById('jual-rusak-bayar-diterima').addEventListener('click', function(){ jualRusakSetBayar('diterima'); });
+  document.getElementById('jual-rusak-bayar-piutang').addEventListener('click', function(){ jualRusakSetBayar('piutang'); });
+  document.getElementById('jual-rusak-modal-overlay').addEventListener('click', function(ev){ if(ev.target===this) tutupJualRusak(); });
   document.getElementById('keluar-aset-alasan').addEventListener('change', keluarAsetOnAlasanChange);
   document.getElementById('keluar-aset-harga').addEventListener('input', keluarAsetUpdateUntungRugiPreview);
   document.getElementById('keluar-aset-bayar-diterima').addEventListener('click', function(){ keluarAsetSetBayar('diterima'); });
@@ -18434,7 +18627,7 @@ if(document.readyState==='loading'){
       : Promise.resolve().then(function(){
           var all = { app:'tumbuh-kaya-arsip', versi:1, tahun:Number(y), dibuat:new Date().toISOString(), akun:(CURRENT_USER&&CURRENT_USER.nama)||'' };
           KOLEKSI.forEach(function(k){ all[k] = data[k]; }); all.ringkas = ringkas(all);
-          var name = 'Tumbuh-Kaya-Arsip-'+y+'-'+new Date().toISOString().slice(0,10)+'.json';
+          var name = 'Tumbuh-Kaya-Arsip-'+y+'-'+todayISO()+'.json';
           saveLocal(name, JSON.stringify(all));
           return { file:{ id:null, name:name, url:null }, ringkas: all.ringkas, lokasi:'lokal' };
         });
